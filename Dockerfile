@@ -8,4 +8,4 @@ RUN javac IDSWebServer.java
 
 EXPOSE 8080
 
-CMD ["java", "IDSWebServer"]
+CMD ["java", "IDSWebServer1"]
