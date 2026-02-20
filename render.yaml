@@ -1,6 +1,6 @@
 services:
   - type: web
     name: ids-webserver
-    env: java
+    runtime: docker
     buildCommand: javac IDSWebServer.java
     startCommand: java IDSWebServer
