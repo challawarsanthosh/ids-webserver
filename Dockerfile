@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN javac IDSWebServer.java
+RUN javac *.java
 
 EXPOSE 8080
 
