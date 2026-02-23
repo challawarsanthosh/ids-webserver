@@ -10,7 +10,6 @@ import java.util.*;
 
 public class IDSWebServer1 {
 
-    // 🔥 Now using Map to count occurrences
     static Map<String, Integer> blockedIPs = new HashMap<>();
     static Map<String, Integer> blockedNumbers = new HashMap<>();
     static List<String> recentAlerts = new ArrayList<>();
@@ -25,8 +24,8 @@ public class IDSWebServer1 {
 
     public static void main(String[] args) throws Exception {
 
-       int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
-       HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         server.createContext("/", new RootHandler());
         server.createContext("/login", new LoginHandler());
@@ -35,43 +34,17 @@ public class IDSWebServer1 {
         server.setExecutor(null);
         server.start();
 
-        System.out.println("Website running at http://localhost:8080");
+        System.out.println("Website running...");
     }
 
     // ================= HOME PAGE =================
     static class RootHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
 
-            StringBuilder blockedIPList = new StringBuilder();
-            for (Map.Entry<String, Integer> entry : blockedIPs.entrySet()) {
-                blockedIPList.append("<li>")
-                        .append(entry.getKey())
-                        .append(" (")
-                        .append(entry.getValue())
-                        .append(" times)")
-                        .append("</li>");
-            }
-
-            StringBuilder blockedNumberList = new StringBuilder();
-            for (Map.Entry<String, Integer> entry : blockedNumbers.entrySet()) {
-                blockedNumberList.append("<li>")
-                        .append(entry.getKey())
-                        .append(" (")
-                        .append(entry.getValue())
-                        .append(" times)")
-                        .append("</li>");
-            }
-
-            StringBuilder alertList = new StringBuilder();
-            for (String alert : recentAlerts) {
-                alertList.append("<li>").append(alert).append("</li>");
-            }
-
             String html =
                     "<html><body style='text-align:center;font-family:Arial'>" +
-                    "<h1>Cyber Security IDS Website</h1>" +
+                    "<h2>Cyber Security IDS</h2>" +
 
-                    "<h2>Login Detection</h2>" +
                     "<form action='/login'>" +
                     "Username: <input name='user'><br><br>" +
                     "Password: <input name='pass'><br><br>" +
@@ -79,28 +52,15 @@ public class IDSWebServer1 {
                     "<button type='submit'>Login</button>" +
                     "</form><br><hr>" +
 
-                    "<h2>Scam Call Detection</h2>" +
                     "<form action='/scam'>" +
                     "Phone Number: <input name='number'><br><br>" +
                     "IP: <input name='ip'><br><br>" +
                     "<button type='submit'>Check</button>" +
-                    "</form><br><hr>" +
-
-                    "<h3>Blocked IPs</h3><ul>" +
-                    blockedIPList +
-                    "</ul>" +
-
-                    "<h3>Blocked Scam Numbers</h3><ul>" +
-                    blockedNumberList +
-                    "</ul>" +
-
-                    "<h3>Recent Alerts</h3><ul>" +
-                    alertList +
-                    "</ul>" +
+                    "</form>" +
 
                     "</body></html>";
 
-            exchange.sendResponseHeaders(200, html.length());
+            exchange.sendResponseHeaders(200, html.getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(html.getBytes());
             os.close();
@@ -123,19 +83,27 @@ public class IDSWebServer1 {
 
                 blockedIPs.put(ip, blockedIPs.getOrDefault(ip, 0) + 1);
 
-                String alert = "LOGIN INTRUSION from IP: " + ip +
-                        " at " + LocalDateTime.now();
+                String time = LocalDateTime.now().toString();
+                String alert = "INTRUSION | IP: " + ip + " | Time: " + time;
 
                 recentAlerts.add(alert);
                 saveLog(alert);
 
-                response = "<h2 style='color:red'>" + alert + "</h2>";
-            }
-            else {
-                response = "<h2 style='color:green'>Login Successful</h2>";
+                response =
+                        "<html><body style='color:red;font-family:Arial'>" +
+                        "<h2>INTRUSION</h2>" +
+                        "<h3>IP: " + ip + "</h3>" +
+                        "<h3>Time: " + time + "</h3>" +
+                        "</body></html>";
+            } else {
+
+                response =
+                        "<html><body style='color:green;font-family:Arial'>" +
+                        "<h2>SAFE</h2>" +
+                        "</body></html>";
             }
 
-            exchange.sendResponseHeaders(200, response.length());
+            exchange.sendResponseHeaders(200, response.getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.close();
@@ -162,20 +130,27 @@ public class IDSWebServer1 {
                 blockedIPs.put(ip,
                         blockedIPs.getOrDefault(ip, 0) + 1);
 
-                String alert = "SCAM DETECTED: " + number +
-                        " from IP: " + ip +
-                        " at " + LocalDateTime.now();
+                String time = LocalDateTime.now().toString();
+                String alert = "SCAM | Number: " + number + " | IP: " + ip + " | Time: " + time;
 
                 recentAlerts.add(alert);
                 saveLog(alert);
 
-                response = "<h2 style='color:red'>" + alert + "</h2>";
-            }
-            else {
-                response = "<h2 style='color:green'>Safe Number</h2>";
+                response =
+                        "<html><body style='color:red;font-family:Arial'>" +
+                        "<h2>INTRUSION</h2>" +
+                        "<h3>IP: " + ip + "</h3>" +
+                        "<h3>Time: " + time + "</h3>" +
+                        "</body></html>";
+            } else {
+
+                response =
+                        "<html><body style='color:green;font-family:Arial'>" +
+                        "<h2>SAFE</h2>" +
+                        "</body></html>";
             }
 
-            exchange.sendResponseHeaders(200, response.length());
+            exchange.sendResponseHeaders(200, response.getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.close();
