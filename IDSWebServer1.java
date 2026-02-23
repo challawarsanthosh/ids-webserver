@@ -10,9 +10,8 @@ import java.util.*;
 
 public class IDSWebServer1 {
 
-    static Map<String, Integer> blockedIPs = new HashMap<>();
-    static Map<String, Integer> blockedNumbers = new HashMap<>();
-    static List<String> recentAlerts = new ArrayList<>();
+    static Map<String, Integer> loginAttempts = new HashMap<>();
+    static Map<String, Integer> scamCounts = new HashMap<>();
 
     static Set<String> scamBlacklist = new HashSet<>(Arrays.asList(
             "8889988999",
@@ -34,7 +33,7 @@ public class IDSWebServer1 {
         server.setExecutor(null);
         server.start();
 
-        System.out.println("Website running...");
+        System.out.println("Server running...");
     }
 
     // ================= HOME PAGE =================
@@ -43,8 +42,8 @@ public class IDSWebServer1 {
 
             String html =
                     "<html><body style='text-align:center;font-family:Arial'>" +
-                    "<h2>Cyber Security IDS</h2>" +
 
+                    "<h2>Login Detection</h2>" +
                     "<form action='/login'>" +
                     "Username: <input name='user'><br><br>" +
                     "Password: <input name='pass'><br><br>" +
@@ -52,6 +51,7 @@ public class IDSWebServer1 {
                     "<button type='submit'>Login</button>" +
                     "</form><br><hr>" +
 
+                    "<h2>Phone Scam Detection</h2>" +
                     "<form action='/scam'>" +
                     "Phone Number: <input name='number'><br><br>" +
                     "IP: <input name='ip'><br><br>" +
@@ -71,35 +71,33 @@ public class IDSWebServer1 {
     static class LoginHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
 
-            String query = exchange.getRequestURI().getQuery();
-            Map<String, String> params = parseQuery(query);
-
+            Map<String, String> params = parseQuery(exchange.getRequestURI().getQuery());
             String pass = params.get("pass");
             String ip = params.get("ip");
+            String time = LocalDateTime.now().toString();
 
             String response;
 
             if (!"admin123".equals(pass)) {
 
-                blockedIPs.put(ip, blockedIPs.getOrDefault(ip, 0) + 1);
-
-                String time = LocalDateTime.now().toString();
-                String alert = "INTRUSION | IP: " + ip + " | Time: " + time;
-
-                recentAlerts.add(alert);
-                saveLog(alert);
+                loginAttempts.put(ip, loginAttempts.getOrDefault(ip, 0) + 1);
+                int count = loginAttempts.get(ip);
 
                 response =
                         "<html><body style='color:red;font-family:Arial'>" +
-                        "<h2>INTRUSION</h2>" +
+                        "<h2>LOGIN INTRUSION</h2>" +
                         "<h3>IP: " + ip + "</h3>" +
                         "<h3>Time: " + time + "</h3>" +
+                        "<h3>Attempts: " + count + "</h3>" +
                         "</body></html>";
+
             } else {
 
                 response =
                         "<html><body style='color:green;font-family:Arial'>" +
-                        "<h2>SAFE</h2>" +
+                        "<h2>LOGIN SAFE</h2>" +
+                        "<h3>IP: " + ip + "</h3>" +
+                        "<h3>Time: " + time + "</h3>" +
                         "</body></html>";
             }
 
@@ -114,39 +112,33 @@ public class IDSWebServer1 {
     static class ScamHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
 
-            String query = exchange.getRequestURI().getQuery();
-            Map<String, String> params = parseQuery(query);
-
+            Map<String, String> params = parseQuery(exchange.getRequestURI().getQuery());
             String number = params.get("number");
             String ip = params.get("ip");
+            String time = LocalDateTime.now().toString();
 
             String response;
 
             if (isScamNumber(number)) {
 
-                blockedNumbers.put(number,
-                        blockedNumbers.getOrDefault(number, 0) + 1);
-
-                blockedIPs.put(ip,
-                        blockedIPs.getOrDefault(ip, 0) + 1);
-
-                String time = LocalDateTime.now().toString();
-                String alert = "SCAM | Number: " + number + " | IP: " + ip + " | Time: " + time;
-
-                recentAlerts.add(alert);
-                saveLog(alert);
+                scamCounts.put(number, scamCounts.getOrDefault(number, 0) + 1);
+                int count = scamCounts.get(number);
 
                 response =
                         "<html><body style='color:red;font-family:Arial'>" +
-                        "<h2>INTRUSION</h2>" +
+                        "<h2>SCAM DETECTED</h2>" +
                         "<h3>IP: " + ip + "</h3>" +
                         "<h3>Time: " + time + "</h3>" +
+                        "<h3>Occurrences: " + count + "</h3>" +
                         "</body></html>";
+
             } else {
 
                 response =
                         "<html><body style='color:green;font-family:Arial'>" +
-                        "<h2>SAFE</h2>" +
+                        "<h2>SAFE NUMBER</h2>" +
+                        "<h3>IP: " + ip + "</h3>" +
+                        "<h3>Time: " + time + "</h3>" +
                         "</body></html>";
             }
 
@@ -182,17 +174,6 @@ public class IDSWebServer1 {
                 return true;
 
         return false;
-    }
-
-    // ================= SAVE LOG =================
-    static void saveLog(String message) {
-        try {
-            FileWriter fw = new FileWriter("ids_logs.txt", true);
-            fw.write(message + "\n");
-            fw.close();
-        } catch (IOException e) {
-            System.out.println("Log error");
-        }
     }
 
     // ================= PARSE QUERY =================
